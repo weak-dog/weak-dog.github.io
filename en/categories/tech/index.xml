@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>tech on Weakdog&#39;s Blog</title>
+    <link>https://weak-dog.github.io/en/categories/tech/</link>
+    <description>Recent content in tech on Weakdog&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Mon, 11 Sep 2023 16:23:09 +0800</lastBuildDate><atom:link href="https://weak-dog.github.io/en/categories/tech/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>JTrans</title>
+      <link>https://weak-dog.github.io/en/posts/tech/jtrans/</link>
+      <pubDate>Mon, 11 Sep 2023 16:23:09 +0800</pubDate>
+      
+      <guid>https://weak-dog.github.io/en/posts/tech/jtrans/</guid>
+      <description>jTrans论文总结</description>
+    </item>
+    
+    <item>
+      <title>hugo建站</title>
+      <link>https://weak-dog.github.io/en/posts/tech/%E5%BB%BA%E7%AB%99/</link>
+      <pubDate>Tue, 21 Feb 2023 16:14:13 +0800</pubDate>
+      
+      <guid>https://weak-dog.github.io/en/posts/tech/%E5%BB%BA%E7%AB%99/</guid>
+      <description>使用hugo和github page搭建个人博客</description>
+    </item>
+    
+  </channel>
+</rss>

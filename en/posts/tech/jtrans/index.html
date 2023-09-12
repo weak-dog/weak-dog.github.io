@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>JTrans | Weakdog&#39;s Blog</title>
+<meta name="keywords" content="representation">
+<meta name="description" content="jTrans论文总结">
+<meta name="author" content="weakdog">
+<link rel="canonical" href="https://weak-dog.github.io/en/posts/tech/jtrans/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.76b8ef460c5f10551a864443f2ed34b2a0f40bd1d42da2f4ee4eb25932876d72.css" integrity="sha256-drjvRgxfEFUahkRD8u00sqD0C9HULaL07k6yWTKHbXI=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.f413e19d0714851f6474e7ee9632408e58ac146fbdbe62747134bea2fa3415e0.js" integrity="sha256-9BPhnQcUhR9kdOfuljJAjlisFG&#43;9vmJ0cTS&#43;ovo0FeA="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="https://weak-dog.github.io/img/test.jpeg">
+<link rel="icon" type="image/png" sizes="16x16" href="https://weak-dog.github.io/img/test.jpeg">
+<link rel="icon" type="image/png" sizes="32x32" href="https://weak-dog.github.io/img/test.jpeg">
+<link rel="apple-touch-icon" href="https://weak-dog.github.io/test.jpeg">
+<link rel="mask-icon" href="https://weak-dog.github.io/test.jpeg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="JTrans" />
+<meta property="og:description" content="jTrans论文总结" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://weak-dog.github.io/en/posts/tech/jtrans/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-09-11T16:23:09+08:00" />
+<meta property="article:modified_time" content="2023-09-11T16:23:09+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="JTrans"/>
+<meta name="twitter:description" content="jTrans论文总结"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [, 
+    {
+      "@type": "ListItem",
+      "position":  5 ,
+      "name": "JTrans",
+      "item": "https://weak-dog.github.io/en/posts/tech/jtrans/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "JTrans",
+  "name": "JTrans",
+  "description": "jTrans论文总结",
+  "keywords": [
+    "representation"
+  ],
+  "articleBody": "jTrans：Jump-Aware Transformer for Binary Code Similarity Detection 论文提出了一种新的学习二进制代码representation的方法jTrans：设计了一种新的jump-aware representation以及相应的预训练任务。同时构造了一个新的二进制程序数据集BinaryCorp。\n传统的二进制相似性检测（BCSD）方法大多基于CFG，这种方法时间开销大且鲁棒性差，因为编译器优化等因素会改变程序CFG，改进方法通过计算CFG片段的相似性提高鲁棒性，但基于人工构造的特征，导致这些方法不能精确提取程序语义。\nSOTA方法大多基于机器学习技术，将目标二进制程序转化成特征向量，在向量空间中计算相似性。Asm2Vec和SAFE等基于NLP方法；另一些方法基于GNN学习CFG的representation；还有一些方法结合使用上述两种方法：使用NLP技术计算基本块的representation，根据CFG构造GNN进一步处理基本块representation。\nSOTA方法存在的缺点：\nNPL-based方法只考虑了指令的序列顺序以及指令之间的关系，而忽略了程序的实际执行信息（如控制流），缺乏对程序的语义理解，无法应对编译优化产生的影响。 仅依靠CFG会遗漏每个基本块的语义，Genius和Gemini使用人工提取的特征（指令数）扩展CFG，但这些特征不足以捕获代码语义。另外，这些方案使用GNN理解CFG，GNN只能捕获结构信息，而且训练和并行相对困难。 用于训练和评估现有方案的数据集的体量和多样性不够大，缺乏一个通用的大型数据集。SOTA各自使用各自构建的数据集，存在过拟合的可能，造成性能高的假象。 jump-aware representation即通过共享指令的每个跳转目标的token embedding和position embedding参数来捕获控制流信息。首先使用无监督学习任务对jTrans进行预训练，学习指令语义和控制流信息，之后对jTrans进行微调，匹配语义相似的函数。不依赖于GNN遍历相应的CFG。\nPreprocessing Instructions 使用助记符和操作数作为tokens 使用代表字符串 使用代表立即数 将外部函数调用的名称和标签作为tokens，将内部函数调用的名称替换为 对于每个跳转对，使用JUMP_XXX替换源token，XXX是该跳转对的目标token顺序，消除随机基址的影响。 Modeling Jump Instructions 修改了位置编码机制，以反映跳转指令的影响。位置编码的隐含逻辑是标记之间的距离越大，表示相互影响越弱，而跳转指令能够将代码中相聚较远的区域结合起来。方法是通过参数共享实现：对于每个跳转对，source token’s embedding被用作target token的positional encoding。jTrans目前只考虑了直接跳转。\nTrain Pre-train jTrans\nMLM\njump task prediction(JTP)：给定一个随机选择的jump source token，标记为，预测相应的target token。\nFine-Tuning\n针对函数相似性检查这一监督学习任务对模型进行微调。\n",
+  "wordCount" : "1268",
+  "inLanguage": "en",
+  "datePublished": "2023-09-11T16:23:09+08:00",
+  "dateModified": "2023-09-11T16:23:09+08:00",
+  "author":[{
+    "@type": "Person",
+    "name": "weakdog"
+  }],
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://weak-dog.github.io/en/posts/tech/jtrans/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Weakdog's Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://weak-dog.github.io/img/test.jpeg"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://weak-dog.github.io/en/" accesskey="h" title="Weakdog&#39;s Blog (Alt + H)">
+                <img src="https://weak-dog.github.io/img/test.jpeg" alt="" aria-label="logo"
+                    height="35">Weakdog&#39;s Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://weak-dog.github.io/en/" title="🏠主页">
+                    <span>🏠主页</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/posts" title="📚文章">
+                    <span>📚文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/archive" title="⏱时间轴">
+                    <span>⏱时间轴</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/tags" title="🔖标签">
+                    <span>🔖标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/about" title="🙋🏻‍♂️关于">
+                    <span>🙋🏻‍♂️关于</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://weak-dog.github.io/en/">Home</a></div>
+    <h1 class="post-title">
+      JTrans
+    </h1>
+    <div class="post-description">
+      jTrans论文总结
+    </div>
+    <div class="post-meta"><span title='2023-09-11 16:23:09 +0800 CST'>2023-09-11</span>&nbsp;·&nbsp;3 min&nbsp;·&nbsp;weakdog
+
+</div>
+  </header> <aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#jtransjump-aware-transformer-for-binary-code-similarity-detection" aria-label="jTrans：Jump-Aware Transformer for Binary Code Similarity Detection">jTrans：Jump-Aware Transformer for Binary Code Similarity Detection</a><ul>
+                            
+                    <li>
+                        <a href="#preprocessing-instructions" aria-label="Preprocessing Instructions">Preprocessing Instructions</a></li>
+                    <li>
+                        <a href="#modeling-jump-instructions" aria-label="Modeling Jump Instructions">Modeling Jump Instructions</a></li>
+                    <li>
+                        <a href="#train" aria-label="Train">Train</a>
+                    </li>
+                </ul>
+                </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><h2 id="jtransjump-aware-transformer-for-binary-code-similarity-detection">jTrans：Jump-Aware Transformer for Binary Code Similarity Detection<a hidden class="anchor" aria-hidden="true" href="#jtransjump-aware-transformer-for-binary-code-similarity-detection">#</a></h2>
+<p>论文提出了一种新的学习二进制代码representation的方法<code>jTrans</code>：设计了一种新的jump-aware representation以及相应的预训练任务。同时构造了一个新的二进制程序数据集<code>BinaryCorp</code>。</p>
+<p>传统的二进制相似性检测（BCSD）方法大多基于CFG，这种方法时间开销大且鲁棒性差，因为编译器优化等因素会改变程序CFG，改进方法通过计算CFG片段的相似性提高鲁棒性，但基于人工构造的特征，导致这些方法不能精确提取程序语义。</p>
+<p>SOTA方法大多基于机器学习技术，将目标二进制程序转化成特征向量，在向量空间中计算相似性。Asm2Vec和SAFE等基于NLP方法；另一些方法基于GNN学习CFG的representation；还有一些方法结合使用上述两种方法：使用NLP技术计算基本块的representation，根据CFG构造GNN进一步处理基本块representation。</p>
+<p>SOTA方法存在的缺点：</p>
+<ul>
+<li>NPL-based方法只考虑了指令的序列顺序以及指令之间的关系，而忽略了程序的实际执行信息（如控制流），缺乏对程序的语义理解，无法应对编译优化产生的影响。</li>
+<li>仅依靠CFG会遗漏每个基本块的语义，Genius和Gemini使用人工提取的特征（指令数）扩展CFG，但这些特征不足以捕获代码语义。另外，这些方案使用GNN理解CFG，GNN只能捕获结构信息，而且训练和并行相对困难。</li>
+<li>用于训练和评估现有方案的数据集的体量和多样性不够大，缺乏一个通用的大型数据集。SOTA各自使用各自构建的数据集，存在过拟合的可能，造成性能高的假象。</li>
+</ul>
+<p>jump-aware representation即通过共享指令的每个跳转目标的token embedding和position embedding参数来捕获控制流信息。首先使用无监督学习任务对jTrans进行预训练，学习指令语义和控制流信息，之后对jTrans进行微调，匹配语义相似的函数。不依赖于GNN遍历相应的CFG。</p>
+<h3 id="preprocessing-instructions">Preprocessing Instructions<a hidden class="anchor" aria-hidden="true" href="#preprocessing-instructions">#</a></h3>
+<ol>
+<li>使用助记符和操作数作为tokens</li>
+<li>使用&lt;str&gt;代表字符串</li>
+<li>使用&lt;const&gt;代表立即数</li>
+<li>将外部函数调用的名称和标签作为tokens，将内部函数调用的名称替换为&lt;function&gt;</li>
+<li>对于每个跳转对，使用JUMP_XXX替换源token，XXX是该跳转对的目标token顺序，消除随机基址的影响。</li>
+</ol>
+<h3 id="modeling-jump-instructions">Modeling Jump Instructions<a hidden class="anchor" aria-hidden="true" href="#modeling-jump-instructions">#</a></h3>
+<p>修改了位置编码机制，以反映跳转指令的影响。位置编码的隐含逻辑是标记之间的距离越大，表示相互影响越弱，而跳转指令能够将代码中相聚较远的区域结合起来。方法是通过参数共享实现：对于每个跳转对，source token&rsquo;s embedding被用作target token的positional encoding。jTrans目前只考虑了直接跳转。</p>
+<p><img loading="lazy" src="1.png" alt=""  />
+</p>
+<h3 id="train">Train<a hidden class="anchor" aria-hidden="true" href="#train">#</a></h3>
+<ul>
+<li>
+<p>Pre-train jTrans</p>
+<ul>
+<li>
+<p>MLM</p>
+</li>
+<li>
+<p>jump task prediction(JTP)：给定一个随机选择的jump source token，标记为&lt;LOC&gt;，预测相应的target token。</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Fine-Tuning</p>
+<p>针对函数相似性检查这一监督学习任务对模型进行微调。</p>
+</li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://weak-dog.github.io/en/tags/representation/">representation</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="https://weak-dog.github.io/en/posts/tech/%E5%BB%BA%E7%AB%99/">
+    <span class="title">Next »</span>
+    <br>
+    <span>hugo建站</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="https://weak-dog.github.io/en/">Weakdog&#39;s Blog</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
