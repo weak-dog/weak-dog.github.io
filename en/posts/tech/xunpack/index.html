@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Xunpack | Weakdog&#39;s Blog</title>
+<meta name="keywords" content="packer">
+<meta name="description" content="Xunpack论文总结">
+<meta name="author" content="weakdog">
+<link rel="canonical" href="https://weak-dog.github.io/en/posts/tech/xunpack/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.76b8ef460c5f10551a864443f2ed34b2a0f40bd1d42da2f4ee4eb25932876d72.css" integrity="sha256-drjvRgxfEFUahkRD8u00sqD0C9HULaL07k6yWTKHbXI=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.f413e19d0714851f6474e7ee9632408e58ac146fbdbe62747134bea2fa3415e0.js" integrity="sha256-9BPhnQcUhR9kdOfuljJAjlisFG&#43;9vmJ0cTS&#43;ovo0FeA="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="https://weak-dog.github.io/img/test.jpeg">
+<link rel="icon" type="image/png" sizes="16x16" href="https://weak-dog.github.io/img/test.jpeg">
+<link rel="icon" type="image/png" sizes="32x32" href="https://weak-dog.github.io/img/test.jpeg">
+<link rel="apple-touch-icon" href="https://weak-dog.github.io/test.jpeg">
+<link rel="mask-icon" href="https://weak-dog.github.io/test.jpeg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Xunpack" />
+<meta property="og:description" content="Xunpack论文总结" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://weak-dog.github.io/en/posts/tech/xunpack/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2023-11-07T15:14:48+08:00" />
+<meta property="article:modified_time" content="2023-11-07T15:14:48+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Xunpack"/>
+<meta name="twitter:description" content="Xunpack论文总结"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [, 
+    {
+      "@type": "ListItem",
+      "position":  5 ,
+      "name": "Xunpack",
+      "item": "https://weak-dog.github.io/en/posts/tech/xunpack/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Xunpack",
+  "name": "Xunpack",
+  "description": "Xunpack论文总结",
+  "keywords": [
+    "packer"
+  ],
+  "articleBody": "Xunpack: Cross-Architecture Unpacking for Linux IoT Malware 问题背景 IoT malware的特点在于架构的多样性，而现有的恶意程序检测工具大多只能处理x86程序，无法处理Arm和MIPS等架构的程序，并且难以对抗packer和anti-analysis技术。\nXunpack的设计原则 使用QEMU使恶意代码分析与特定架构脱钩，只要QEMU支持，Xunpack就能解压任何架构的恶意软件。\n贡献点 设计并实现了首个针对IoT malware的跨架构unpacker。 引入了SelectiveDump，这是一种对分散在memory dump中的恶意软件原始代码进行重建的技术。 使用真实世界的ELF packer进行实验，证明Xunpack的抗分析能力。 Xunpack的两个阶段 Online analysis for dump generation\n使用QEMU的system-level emulation和tiny code generator(TCG)插件接口开发了dump generation module。用于使用独立于体系结构的方式捕获两类事件：自修改代码的执行和从内核到用户区目标代码的转换。\nOffline analysis for original code reconstruction from those dumps\n论文引入了SelectiveDump技术，通过在memory dump中为原始代码的特定部分寻找候选内存区域并选择最合适的区域重建原始代码。SelectiveDump将内存区域划分成多个分块，计算和比较每个内存区域的熵值并进行选择，从而对抗VI型packer（VI型packer在执行的任何时刻都只会unpack出原始代码的一小部分，不存在某个时刻能unpack出完整的原始代码）。\nXunpack的挑战 识别恶意代码的执行。Xunpack建立在QEMU的系统仿真上，需要将运行的malware与其他进程分开，而不依赖于特定的体系结构和平台。现有研究大多根据进程线程标识符（PID，TID）或特殊用途寄存器（CR3或ASID）进行识别，这些方法都依赖于底层架构。 捕获目标代码中的特定事件，例如从系统调用返回，而无需依赖于特定架构指令的执行，如sysret。 内存转储，即使从虚拟内存地址到物理地址的转换并不总是可能的。一些CPU，例如MIPS架构，不支持用于内存地址转换的page-table-walk，因此我们始终无法解析我们需要转储的虚拟地址范围。 VI型packer，目前还没有针对这类packer的unpack方法。 论文实验： unpack使用elfpack打包的14种不同架构的二进制文件，展示Xunpack的跨架构能力。 unpack使用11种真实Linux ELF packer打包的二进制文件，并与现有unpacker进行比较。 BACKGROUND 1. Malware Unpacking unpacking是静态分析或逆向分析之前的必然步骤。最原始的unpacking方法使用调试器手动脱壳。自动化unpacker大多使用write-and-then execution技术，将程序在运行过程中动态写入的内存区域标记为dirty memory，当dirty memory被执行时生成memory dump。然而当执行一个packed malware，write-and-then execution可能会产生许多memory dump，只有其中一部分包含程序的原始代码，需要通过某种方法识别包含原始代码的dump。主要有以下几种方法：\n最原始的方法选择等待一定时间后生成dump，基于原始代码很可能在恶意软件执行后期出现的假设。 反病毒扫描。根据恶意代码签名的模式匹配结果来确定带有原始代码的dump。由于恶意签名可能与原始代码匹配，而不与packer代码匹配，因此可以通过是有命中签名判断unpacking过程在哪一点完成。 熵。加壳程序的熵值较高，因此熵值较低的dump更可能包含原始代码。 code-to-data ratio（C2DR）。C2DR高的dump更可能包含原始代码。 2. Packer Taxonomy 论文SoK: Deep Packer Inspection将packer分为6类：\nType Ⅰ：由single unpacking layer组成，执行unpacking routine后跳转到原始代码。 Type Ⅱ：包含多个unpacking layer，顺序执行各层。 Type Ⅲ：包含多个unpacking layer，循环执行各层，在各层之间来回切换，形成更复杂的拓扑结构，如循环。 Type Ⅳ：由单层或多层unpacking layer构成，其中有些layer不仅负责unpack，还负责hook和插桩。交错执行unpacking layer和原始代码。 Type Ⅴ：类似Type Ⅳ，但包含原始代码的unpacking layer有多个帧，当执行到某个帧的时候这个帧才被unpack。因此memory dump中只包含在分期期间执行的原始代码。 Type Ⅵ：类似Type Ⅴ，但在执行完原始代码后会重新打包执行过的原始代码。因此memory dump中只包含在dump时刻刚刚执行过的原始代码。这种技术称为shift frame decoding。 MOTIVATION 1. Lack of tools for diverse architectures 针对非x86 malware的unpacking技术很少，而IoT malware大多是非x86架构（88%）。\n2. Lack of resistance against anti-analysis Malformed ELF Header\nProcess-level emulation通常会从可执行文件header中收集仿真需要的信息，但malware作者经常修改这些字段，如UPX会修改ELF头中的数据。\nDual-mapping\n这种技术通过将一个物理内存区域映射到两个不同的虚拟地址区域，扰乱了write-and-then-execute的unpack过程。malware使用一个地址来写入unpacked code，使用另一个地址来执行这段代码，使得写入和执行的虚拟内存地址不同。ELFCrypt使用了类似技术，首先通过memfd_create创建一个文件描述符，用于将unpacked代码写入内存，然后使用fexecve执行unpacked代码。由于通过文件描述符写入的缓冲区地址不会暴露，因此写入后执行方法无法识别写入代码的内存地址。\nShift frame decoding\nKiteshield使用这种技术，在每个函数的入口和出口都设置了hook，并使用ptrace捕获它们的执行过程，以便解码和重新编码。\nInvocation of unsupported system calls\n通过调用handler缺失或没有正确实现的特定系统调用来干扰仿真分析。为malware分析准备足够的进程级仿真系统调用handler是一项挑战。例如截至6.0.50版，QEMU的进程级仿真不支持ptrace和execveat系统调用。即使仿真器实现了所需的素有handler，它们也可能导致malware通过观察仿真器与真实环境的行为差异来检测仿真器。\n研究范围 排除了使用Perl和Python等脚本语言编写的恶意软件，专注于编译后的ELF格式可执行文件，它们构成了IoT malware的主体（94.3%）。 排除使用进程级虚拟化的打包程序。 排除死代码。 模型架构 Dump Generation 1. Target Code Identification 使用code tainting技术根据自修改代码的执行情况确定分析目标。首先解析ELF header，识别text段所在的内存地址区域，然后对区域内指令的内存写入操作做system-widely monitor，同时使用shadow memory（一种存储这些标签的数据结构）对写入区域进行标记，shadow memory将每个物理内存地址映射为一个标记。如果写入的内存区域被执行，会将其确定为分析目标。通过将内存写入指令的标签传播的内存区域就能准确跟踪目标代码的执行情况。这种设计可以解决Dual-mapping问题：由于在物理地址层监控内存的写入和执行，因此即使目标代码使用不同的虚拟地址写入和操作同一个物理内存区域，Xunpack也能准确识别目标代码的执行。\n2. Dump Generation Trigge 为了确定原始代码被写入内存的时机，论文设计了两种触发事件：\nlayer Transitions\n论文定义在unpack过程中每次迭代得到的unpacked code为一个layer。例如某段代码将数据写入一个特定的内存区域，这个区域就是一个layer。当Xunpack捕捉到layer之间的转换时，就会对写入的memory page生成一个dump。\nTransitions to Target Code\n将从内核空间到用户空间中的目标代码执行流转换作为生成dump的触发器。这些转换可能由系统调用返回、异常或中断处理、上下文切换引起。为了捕获这种转换，需要确定内核空间和用户空间的边界，而边界的位置与架构有关。为了解决这个问题，Xunpack在引导内核镜像（ELF格式的可执行文件）之前从内核镜像中提取内核在虚拟内存地址空间中的位置。具体来说，可以从section和program header中获取其位置。如果内核镜像被压缩，则使用vmlinux-to-elf从中提取原始内核。\nXunpack使用tiny code generation（TCG）插件接口（I/F）实现dump generation组件。TCG是QEMU内部使用的IR，支持多种架构。子操作系统的指令被翻译成TCG，然后再翻译成主机操作系统的指令，从而模拟子系统指令的行为。\nCode Reconstruction 这一阶段重建ELF文件，使其尽可能接近原始代码。\n1. Dump Selection 从dump文件中选择更接近原始代码的region或chunk。由于packed程序在执行时可能会多次覆盖某个内存区域，产生多个layer，从而得到多个dump文件。其中部分dump文件包含原始代码，现有方法通过计算每个dump文件的熵来选择。但是基于熵的方法往往无法完全恢复使用Type Ⅴ或Type Ⅵ packer加壳的程序，因为region边界与实际unpacking framge不一致（dump区域同时包含unpacked code和packed code）。Xunpack使用了更细粒度的划分方法SelectiveDump：将一个region划分为适当大小的块，计算每个块的熵，选择熵值较小的region作为结果。\n2. ELF Reconstruction 重建流程分为三步\nminimum ELF creation\n创建一个最小的ELF可执行文件，包括header, NULL section, shstrtab section以及section header table等。\nchunk insertion\n将每个chunk或region插入到ELF可执行文件中相应的偏移位置。\nsymbol table reconstruction\n与windows脱壳中重建IAT类似，区别在于Linux malware通常使用静态链接库，并丢失其符号信息，而windows malware通常使用动态链接库，更有可能保留导入函数名。识别静态链接库的函数名难度较大，这一步是可选的。具体而言Xunpack使用IDA FLIRT或签名匹配等外部工具恢复这些函数的符号信息。\n",
+  "wordCount" : "4153",
+  "inLanguage": "en",
+  "datePublished": "2023-11-07T15:14:48+08:00",
+  "dateModified": "2023-11-07T15:14:48+08:00",
+  "author":[{
+    "@type": "Person",
+    "name": "weakdog"
+  }],
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://weak-dog.github.io/en/posts/tech/xunpack/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Weakdog's Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://weak-dog.github.io/img/test.jpeg"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://weak-dog.github.io/en/" accesskey="h" title="Weakdog&#39;s Blog (Alt + H)">
+                <img src="https://weak-dog.github.io/img/test.jpeg" alt="" aria-label="logo"
+                    height="35">Weakdog&#39;s Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://weak-dog.github.io/en/" title="🏠主页">
+                    <span>🏠主页</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/posts" title="📚文章">
+                    <span>📚文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/archive" title="⏱时间轴">
+                    <span>⏱时间轴</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/tags" title="🔖标签">
+                    <span>🔖标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://weak-dog.github.io/en/about" title="🙋🏻‍♂️关于">
+                    <span>🙋🏻‍♂️关于</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://weak-dog.github.io/en/">Home</a></div>
+    <h1 class="post-title">
+      Xunpack
+    </h1>
+    <div class="post-description">
+      Xunpack论文总结
+    </div>
+    <div class="post-meta"><span title='2023-11-07 15:14:48 +0800 CST'>2023-11-07</span>&nbsp;·&nbsp;9 min&nbsp;·&nbsp;weakdog
+
+</div>
+  </header> <aside id="toc-container" class="toc-container wide">
+    <div class="toc">
+        <details  open>
+            <summary accesskey="c" title="(Alt + C)">
+                <span class="details">Table of Contents</span>
+            </summary>
+
+            <div class="inner"><ul>
+                    <li>
+                        <a href="#xunpack-cross-architecture-unpacking-for-linux-iot-malware" aria-label="Xunpack: Cross-Architecture Unpacking for Linux IoT Malware">Xunpack: Cross-Architecture Unpacking for Linux IoT Malware</a><ul>
+                            <ul>
+                            
+                    <li>
+                        <a href="#%e9%97%ae%e9%a2%98%e8%83%8c%e6%99%af" aria-label="问题背景">问题背景</a></li>
+                    <li>
+                        <a href="#xunpack%e7%9a%84%e8%ae%be%e8%ae%a1%e5%8e%9f%e5%88%99" aria-label="Xunpack的设计原则">Xunpack的设计原则</a></li>
+                    <li>
+                        <a href="#%e8%b4%a1%e7%8c%ae%e7%82%b9" aria-label="贡献点">贡献点</a></li>
+                    <li>
+                        <a href="#xunpack%e7%9a%84%e4%b8%a4%e4%b8%aa%e9%98%b6%e6%ae%b5" aria-label="Xunpack的两个阶段">Xunpack的两个阶段</a></li>
+                    <li>
+                        <a href="#xunpack%e7%9a%84%e6%8c%91%e6%88%98" aria-label="Xunpack的挑战">Xunpack的挑战</a></li>
+                    <li>
+                        <a href="#%e8%ae%ba%e6%96%87%e5%ae%9e%e9%aa%8c" aria-label="论文实验：">论文实验：</a></li></ul>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#background" aria-label="BACKGROUND">BACKGROUND</a><ul>
+                            <ul>
+                            
+                    <li>
+                        <a href="#1-malware-unpacking" aria-label="1. Malware Unpacking">1. Malware Unpacking</a></li>
+                    <li>
+                        <a href="#2-packer-taxonomy" aria-label="2. Packer Taxonomy">2. Packer Taxonomy</a></li></ul>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#motivation" aria-label="MOTIVATION">MOTIVATION</a><ul>
+                            <ul>
+                            
+                    <li>
+                        <a href="#1-lack-of-tools-for-diverse-architectures" aria-label="1. Lack of tools for diverse architectures">1. Lack of tools for diverse architectures</a></li>
+                    <li>
+                        <a href="#2-lack-of-resistance-against-anti-analysis" aria-label="2. Lack of resistance against anti-analysis">2. Lack of resistance against anti-analysis</a></li></ul>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#%e7%a0%94%e7%a9%b6%e8%8c%83%e5%9b%b4" aria-label="研究范围">研究范围</a></li>
+                    <li>
+                        <a href="#%e6%a8%a1%e5%9e%8b%e6%9e%b6%e6%9e%84" aria-label="模型架构">模型架构</a><ul>
+                            
+                    <li>
+                        <a href="#dump-generation" aria-label="Dump Generation">Dump Generation</a><ul>
+                            
+                    <li>
+                        <a href="#1-target-code-identification" aria-label="1. Target Code Identification">1. Target Code Identification</a></li>
+                    <li>
+                        <a href="#2-dump-generation-trigge" aria-label="2. Dump Generation Trigge">2. Dump Generation Trigge</a></li></ul>
+                    </li>
+                    <li>
+                        <a href="#code-reconstruction" aria-label="Code Reconstruction">Code Reconstruction</a><ul>
+                            
+                    <li>
+                        <a href="#1-dump-selection" aria-label="1. Dump Selection">1. Dump Selection</a></li>
+                    <li>
+                        <a href="#2-elf-reconstruction" aria-label="2. ELF Reconstruction">2. ELF Reconstruction</a>
+                    </li>
+                </ul>
+                </li>
+                </ul>
+                </li>
+                </ul>
+            </div>
+        </details>
+    </div>
+</aside>
+<script>
+    let activeElement;
+    let elements;
+    window.addEventListener('DOMContentLoaded', function (event) {
+        checkTocPosition();
+
+        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
+         
+         activeElement = elements[0];
+         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+     }, false);
+
+    window.addEventListener('resize', function(event) {
+        checkTocPosition();
+    }, false);
+
+    window.addEventListener('scroll', () => {
+        
+        activeElement = Array.from(elements).find((element) => {
+            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
+                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
+                return element;
+            }
+        }) || activeElement
+
+        elements.forEach(element => {
+             const id = encodeURI(element.getAttribute('id')).toLowerCase();
+             if (element === activeElement){
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
+             } else {
+                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
+             }
+         })
+     }, false);
+
+    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+
+    function checkTocPosition() {
+        const width = document.body.scrollWidth;
+
+        if (width - main - (toc * 2) - (gap * 4) > 0) {
+            document.getElementById("toc-container").classList.add("wide");
+        } else {
+            document.getElementById("toc-container").classList.remove("wide");
+        }
+    }
+
+    function getOffsetTop(element) {
+        if (!element.getClientRects().length) {
+            return 0;
+        }
+        let rect = element.getBoundingClientRect();
+        let win = element.ownerDocument.defaultView;
+        return rect.top + win.pageYOffset;   
+    }
+</script>
+
+  <div class="post-content"><h2 id="xunpack-cross-architecture-unpacking-for-linux-iot-malware">Xunpack: Cross-Architecture Unpacking for Linux IoT Malware<a hidden class="anchor" aria-hidden="true" href="#xunpack-cross-architecture-unpacking-for-linux-iot-malware">#</a></h2>
+<h4 id="问题背景">问题背景<a hidden class="anchor" aria-hidden="true" href="#问题背景">#</a></h4>
+<p>IoT malware的特点在于架构的多样性，而现有的恶意程序检测工具大多只能处理x86程序，无法处理Arm和MIPS等架构的程序，并且难以对抗packer和anti-analysis技术。</p>
+<h4 id="xunpack的设计原则">Xunpack的设计原则<a hidden class="anchor" aria-hidden="true" href="#xunpack的设计原则">#</a></h4>
+<p>使用QEMU使恶意代码分析与特定架构脱钩，只要QEMU支持，Xunpack就能解压任何架构的恶意软件。</p>
+<h4 id="贡献点">贡献点<a hidden class="anchor" aria-hidden="true" href="#贡献点">#</a></h4>
+<ul>
+<li>设计并实现了首个针对IoT malware的跨架构unpacker。</li>
+<li>引入了SelectiveDump，这是一种对分散在memory dump中的恶意软件原始代码进行重建的技术。</li>
+<li>使用真实世界的ELF packer进行实验，证明Xunpack的抗分析能力。</li>
+</ul>
+<h4 id="xunpack的两个阶段">Xunpack的两个阶段<a hidden class="anchor" aria-hidden="true" href="#xunpack的两个阶段">#</a></h4>
+<ul>
+<li>
+<p><strong>Online analysis for dump generation</strong></p>
+<p>使用QEMU的system-level emulation和tiny code generator(TCG)插件接口开发了dump generation module。用于使用独立于体系结构的方式捕获两类事件：<code>自修改代码的执行</code>和<code>从内核到用户区目标代码的转换</code>。</p>
+</li>
+<li>
+<p><strong>Offline analysis for original code reconstruction from those dumps</strong></p>
+<p>论文引入了<code>SelectiveDump</code>技术，通过在memory dump中为原始代码的特定部分寻找候选内存区域并选择最合适的区域重建原始代码。SelectiveDump将内存区域划分成多个分块，计算和比较每个内存区域的熵值并进行选择，从而对抗VI型packer（VI型packer在执行的任何时刻都只会unpack出原始代码的一小部分，不存在某个时刻能unpack出完整的原始代码）。</p>
+</li>
+</ul>
+<h4 id="xunpack的挑战">Xunpack的挑战<a hidden class="anchor" aria-hidden="true" href="#xunpack的挑战">#</a></h4>
+<ul>
+<li>识别恶意代码的执行。Xunpack建立在QEMU的系统仿真上，需要将运行的malware与其他进程分开，而不依赖于特定的体系结构和平台。现有研究大多根据进程线程标识符（PID，TID）或特殊用途寄存器（CR3或ASID）进行识别，这些方法都依赖于底层架构。</li>
+<li>捕获目标代码中的特定事件，例如从系统调用返回，而无需依赖于特定架构指令的执行，如sysret。</li>
+<li>内存转储，即使从虚拟内存地址到物理地址的转换并不总是可能的。一些CPU，例如MIPS架构，不支持用于内存地址转换的page-table-walk，因此我们始终无法解析我们需要转储的虚拟地址范围。</li>
+<li>VI型packer，目前还没有针对这类packer的unpack方法。</li>
+</ul>
+<h4 id="论文实验">论文实验：<a hidden class="anchor" aria-hidden="true" href="#论文实验">#</a></h4>
+<ul>
+<li>unpack使用elfpack打包的14种不同架构的二进制文件，展示Xunpack的跨架构能力。</li>
+<li>unpack使用11种真实Linux ELF packer打包的二进制文件，并与现有unpacker进行比较。</li>
+</ul>
+<h2 id="background">BACKGROUND<a hidden class="anchor" aria-hidden="true" href="#background">#</a></h2>
+<h4 id="1-malware-unpacking">1. Malware Unpacking<a hidden class="anchor" aria-hidden="true" href="#1-malware-unpacking">#</a></h4>
+<p>unpacking是静态分析或逆向分析之前的必然步骤。最原始的unpacking方法使用调试器手动脱壳。自动化unpacker大多使用write-and-then execution技术，将程序在运行过程中动态写入的内存区域标记为dirty memory，当dirty memory被执行时生成memory dump。然而当执行一个packed malware，write-and-then execution可能会产生许多memory dump，只有其中一部分包含程序的原始代码，需要通过某种方法识别包含原始代码的dump。主要有以下几种方法：</p>
+<ul>
+<li>最原始的方法选择等待一定时间后生成dump，基于原始代码很可能在恶意软件执行后期出现的假设。</li>
+<li>反病毒扫描。根据恶意代码签名的模式匹配结果来确定带有原始代码的dump。由于恶意签名可能与原始代码匹配，而不与packer代码匹配，因此可以通过是有命中签名判断unpacking过程在哪一点完成。</li>
+<li>熵。加壳程序的熵值较高，因此熵值较低的dump更可能包含原始代码。</li>
+<li>code-to-data ratio（C2DR）。C2DR高的dump更可能包含原始代码。</li>
+</ul>
+<h4 id="2-packer-taxonomy">2. Packer Taxonomy<a hidden class="anchor" aria-hidden="true" href="#2-packer-taxonomy">#</a></h4>
+<p>论文<code>SoK: Deep Packer Inspection</code>将packer分为6类：</p>
+<ul>
+<li><strong>Type Ⅰ</strong>：由single unpacking layer组成，执行unpacking routine后跳转到原始代码。</li>
+<li><strong>Type Ⅱ</strong>：包含多个unpacking layer，顺序执行各层。</li>
+<li><strong>Type Ⅲ</strong>：包含多个unpacking layer，循环执行各层，在各层之间来回切换，形成更复杂的拓扑结构，如循环。</li>
+<li><strong>Type Ⅳ</strong>：由单层或多层unpacking layer构成，其中有些layer不仅负责unpack，还负责hook和插桩。交错执行unpacking layer和原始代码。</li>
+<li><strong>Type Ⅴ</strong>：类似Type Ⅳ，但包含原始代码的unpacking layer有多个帧，当执行到某个帧的时候这个帧才被unpack。因此memory dump中只包含在分期期间执行的原始代码。</li>
+<li><strong>Type Ⅵ</strong>：类似Type Ⅴ，但在执行完原始代码后会重新打包执行过的原始代码。因此memory dump中只包含在dump时刻刚刚执行过的原始代码。这种技术称为shift frame decoding。</li>
+</ul>
+<h2 id="motivation">MOTIVATION<a hidden class="anchor" aria-hidden="true" href="#motivation">#</a></h2>
+<h4 id="1-lack-of-tools-for-diverse-architectures">1. Lack of tools for diverse architectures<a hidden class="anchor" aria-hidden="true" href="#1-lack-of-tools-for-diverse-architectures">#</a></h4>
+<p>针对非x86 malware的unpacking技术很少，而IoT malware大多是非x86架构（88%）。</p>
+<h4 id="2-lack-of-resistance-against-anti-analysis">2. Lack of resistance against anti-analysis<a hidden class="anchor" aria-hidden="true" href="#2-lack-of-resistance-against-anti-analysis">#</a></h4>
+<ul>
+<li>
+<p><strong>Malformed ELF Header</strong></p>
+<p>Process-level emulation通常会从可执行文件header中收集仿真需要的信息，但malware作者经常修改这些字段，如UPX会修改ELF头中的数据。</p>
+</li>
+<li>
+<p><strong>Dual-mapping</strong></p>
+<p>这种技术通过将一个物理内存区域映射到两个不同的虚拟地址区域，扰乱了write-and-then-execute的unpack过程。malware使用一个地址来写入unpacked code，使用另一个地址来执行这段代码，使得写入和执行的虚拟内存地址不同。ELFCrypt使用了类似技术，首先通过memfd_create创建一个文件描述符，用于将unpacked代码写入内存，然后使用fexecve执行unpacked代码。由于通过文件描述符写入的缓冲区地址不会暴露，因此写入后执行方法无法识别写入代码的内存地址。</p>
+</li>
+<li>
+<p><strong>Shift frame decoding</strong></p>
+<p>Kiteshield使用这种技术，在每个函数的入口和出口都设置了hook，并使用ptrace捕获它们的执行过程，以便解码和重新编码。</p>
+</li>
+<li>
+<p><strong>Invocation of unsupported system calls</strong></p>
+<p>通过调用handler缺失或没有正确实现的特定系统调用来干扰仿真分析。为malware分析准备足够的进程级仿真系统调用handler是一项挑战。例如截至6.0.50版，QEMU的进程级仿真不支持ptrace和execveat系统调用。即使仿真器实现了所需的素有handler，它们也可能导致malware通过观察仿真器与真实环境的行为差异来检测仿真器。</p>
+</li>
+</ul>
+<h2 id="研究范围">研究范围<a hidden class="anchor" aria-hidden="true" href="#研究范围">#</a></h2>
+<ul>
+<li>排除了使用Perl和Python等脚本语言编写的恶意软件，专注于编译后的ELF格式可执行文件，它们构成了IoT malware的主体（94.3%）。</li>
+<li>排除使用进程级虚拟化的打包程序。</li>
+<li>排除死代码。</li>
+</ul>
+<h2 id="模型架构">模型架构<a hidden class="anchor" aria-hidden="true" href="#模型架构">#</a></h2>
+<p><img loading="lazy" src="1.png" alt=""  />
+</p>
+<h3 id="dump-generation">Dump Generation<a hidden class="anchor" aria-hidden="true" href="#dump-generation">#</a></h3>
+<h4 id="1-target-code-identification">1. Target Code Identification<a hidden class="anchor" aria-hidden="true" href="#1-target-code-identification">#</a></h4>
+<p>使用code tainting技术根据自修改代码的执行情况确定分析目标。首先解析ELF header，识别text段所在的内存地址区域，然后对区域内指令的内存写入操作做system-widely monitor，同时使用<code>shadow memory</code>（一种存储这些标签的数据结构）对写入区域进行标记，shadow memory将每个物理内存地址映射为一个标记。如果写入的内存区域被执行，会将其确定为分析目标。通过将内存写入指令的标签传播的内存区域就能准确跟踪目标代码的执行情况。这种设计可以解决Dual-mapping问题：由于在物理地址层监控内存的写入和执行，因此即使目标代码使用不同的虚拟地址写入和操作同一个物理内存区域，Xunpack也能准确识别目标代码的执行。</p>
+<h4 id="2-dump-generation-trigge">2. Dump Generation Trigge<a hidden class="anchor" aria-hidden="true" href="#2-dump-generation-trigge">#</a></h4>
+<p>为了确定原始代码被写入内存的时机，论文设计了两种触发事件：</p>
+<ul>
+<li>
+<p><strong>layer Transitions</strong></p>
+<p>论文定义在unpack过程中每次迭代得到的unpacked code为一个layer。例如某段代码将数据写入一个特定的内存区域，这个区域就是一个layer。当Xunpack捕捉到layer之间的转换时，就会对写入的memory page生成一个dump。</p>
+</li>
+<li>
+<p><strong>Transitions to Target Code</strong></p>
+<p>将从内核空间到用户空间中的目标代码执行流转换作为生成dump的触发器。这些转换可能由系统调用返回、异常或中断处理、上下文切换引起。为了捕获这种转换，需要确定内核空间和用户空间的边界，而边界的位置与架构有关。为了解决这个问题，Xunpack在引导内核镜像（ELF格式的可执行文件）之前从内核镜像中提取内核在虚拟内存地址空间中的位置。具体来说，可以从section和program header中获取其位置。如果内核镜像被压缩，则使用vmlinux-to-elf从中提取原始内核。</p>
+</li>
+</ul>
+<p>Xunpack使用tiny code generation（TCG）插件接口（I/F）实现dump generation组件。TCG是QEMU内部使用的IR，支持多种架构。子操作系统的指令被翻译成TCG，然后再翻译成主机操作系统的指令，从而模拟子系统指令的行为。</p>
+<h3 id="code-reconstruction">Code Reconstruction<a hidden class="anchor" aria-hidden="true" href="#code-reconstruction">#</a></h3>
+<p>这一阶段重建ELF文件，使其尽可能接近原始代码。</p>
+<h4 id="1-dump-selection">1. Dump Selection<a hidden class="anchor" aria-hidden="true" href="#1-dump-selection">#</a></h4>
+<p>从dump文件中选择更接近原始代码的region或chunk。由于packed程序在执行时可能会多次覆盖某个内存区域，产生多个layer，从而得到多个dump文件。其中部分dump文件包含原始代码，现有方法通过计算每个dump文件的熵来选择。但是基于熵的方法往往无法完全恢复使用Type Ⅴ或Type Ⅵ packer加壳的程序，因为region边界与实际unpacking framge不一致（dump区域同时包含unpacked code和packed code）。Xunpack使用了更细粒度的划分方法<code>SelectiveDump</code>：将一个region划分为适当大小的块，计算每个块的熵，选择熵值较小的region作为结果。</p>
+<h4 id="2-elf-reconstruction">2. ELF Reconstruction<a hidden class="anchor" aria-hidden="true" href="#2-elf-reconstruction">#</a></h4>
+<p>重建流程分为三步</p>
+<ol>
+<li>
+<p><strong>minimum ELF creation</strong></p>
+<p>创建一个最小的ELF可执行文件，包括header, NULL section, shstrtab section以及section header table等。</p>
+</li>
+<li>
+<p><strong>chunk insertion</strong></p>
+<p>将每个chunk或region插入到ELF可执行文件中相应的偏移位置。</p>
+</li>
+<li>
+<p><strong>symbol table reconstruction</strong></p>
+<p>与windows脱壳中重建IAT类似，区别在于Linux malware通常使用静态链接库，并丢失其符号信息，而windows malware通常使用动态链接库，更有可能保留导入函数名。识别静态链接库的函数名难度较大，这一步是可选的。具体而言Xunpack使用IDA FLIRT或签名匹配等外部工具恢复这些函数的符号信息。</p>
+</li>
+</ol>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://weak-dog.github.io/en/tags/packer/">packer</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="https://weak-dog.github.io/en/posts/tech/pin1/">
+    <span class="title">Next »</span>
+    <br>
+    <span>Pin1</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="https://weak-dog.github.io/en/">Weakdog&#39;s Blog</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
