@@ -6,7 +6,16 @@
     <description>Recent content in 👨🏻‍💻技术 on Weakdog&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 07 Nov 2023 15:14:48 +0800</lastBuildDate><atom:link href="https://weak-dog.github.io/en/posts/tech/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 15 Nov 2023 11:23:30 +0800</lastBuildDate><atom:link href="https://weak-dog.github.io/en/posts/tech/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>kTrans</title>
+      <link>https://weak-dog.github.io/en/posts/tech/ktrans/</link>
+      <pubDate>Wed, 15 Nov 2023 11:23:30 +0800</pubDate>
+      
+      <guid>https://weak-dog.github.io/en/posts/tech/ktrans/</guid>
+      <description>ktrans论文总结</description>
+    </item>
+    
     <item>
       <title>Xunpack</title>
       <link>https://weak-dog.github.io/en/posts/tech/xunpack/</link>

@@ -6,7 +6,16 @@
     <description>Recent content in representation on Weakdog&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 11 Sep 2023 16:23:09 +0800</lastBuildDate><atom:link href="https://weak-dog.github.io/en/tags/representation/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 15 Nov 2023 11:23:30 +0800</lastBuildDate><atom:link href="https://weak-dog.github.io/en/tags/representation/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>kTrans</title>
+      <link>https://weak-dog.github.io/en/posts/tech/ktrans/</link>
+      <pubDate>Wed, 15 Nov 2023 11:23:30 +0800</pubDate>
+      
+      <guid>https://weak-dog.github.io/en/posts/tech/ktrans/</guid>
+      <description>ktrans论文总结</description>
+    </item>
+    
     <item>
       <title>JTrans</title>
       <link>https://weak-dog.github.io/en/posts/tech/jtrans/</link>
